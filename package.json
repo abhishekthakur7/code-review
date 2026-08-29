@@ -11,6 +11,7 @@
     "desktop:run": "pnpm --filter @dev-fast/review-desktop app:run",
     "desktop:watch": "pnpm --filter @dev-fast/review-desktop app:watch",
     "desktop:package:linux": "pnpm --filter @dev-fast/review-desktop app:package:linux",
+    "desktop:package:macos": "pnpm --filter @dev-fast/review-desktop app:package:macos",
     "review": "pnpm --filter @dev.fast/review review",
     "format": "oxfmt --write \"apps/**/*.{ts,tsx,js,jsx,json,css}\" \"!apps/review-desktop/code-oss/**\" \"packages/**/*.{ts,tsx,js,jsx,json,css}\" \"!packages/progressive-review/app/icons/dev-fast.icon/**\" \"*.json\" \".*.json\"",
     "format:check": "oxfmt --check \"apps/**/*.{ts,tsx,js,jsx,json,css}\" \"!apps/review-desktop/code-oss/**\" \"packages/**/*.{ts,tsx,js,jsx,json,css}\" \"!packages/progressive-review/app/icons/dev-fast.icon/**\" \"*.json\" \".*.json\"",
