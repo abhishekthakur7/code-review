@@ -20,6 +20,15 @@ if [[ "$NODE_MAJOR" -lt 24 ]]; then
   exit 1
 fi
 
+# Packaging calls notarize-macos.sh unconditionally, which needs an Apple
+# Developer ID. A locally built app is never quarantined, so Gatekeeper does not
+# require a signature to run it -- skip signing unless an identity is
+# configured, in which case honour it.
+if [[ -z "${CODESIGN_IDENTITY:-}" && -z "${APPLE_SIGN_IDENTITY:-}" ]]; then
+  export SKIP_NOTARIZE=1
+  echo "No signing identity set: building unsigned (fine for a local install)."
+fi
+
 echo "==> 1/3 Building (first build takes a while and needs network access)"
 pnpm --dir "$REPO_ROOT" install
 pnpm --dir "$REPO_ROOT" desktop:package:macos
