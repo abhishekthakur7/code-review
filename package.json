@@ -7,6 +7,7 @@
   "scripts": {
     "dev": "REVIEW_DESKTOP_DEV_FAST=1 pnpm desktop:build && pnpm desktop:run",
     "clean": "node scripts/clean-review-desktop.mjs",
+    "install:app": "bash scripts/install-macos.sh",
     "desktop:build": "pnpm --filter @dev-fast/review-desktop app:build",
     "desktop:run": "pnpm --filter @dev-fast/review-desktop app:run",
     "desktop:watch": "pnpm --filter @dev-fast/review-desktop app:watch",

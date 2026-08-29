@@ -30,17 +30,15 @@ macOS on Apple silicon. Requires **Node.js 24** and **pnpm 11** (`node -v`
 should print `v24.x`; the repo pins it in `.nvmrc`).
 
 ```sh
-pnpm install && pnpm desktop:package:macos \
-  && sudo rm -rf /Applications/Review.app && sudo mv apps/review-desktop/VSCode-darwin-arm64/Review.app /Applications/ \
-  && printf '%s\n' '#!/bin/sh' 'APP=/Applications/Review.app/Contents' '[ -x "$APP/MacOS/Review" ] || { echo "Review is not installed in /Applications." >&2; exit 1; }' 'export ELECTRON_RUN_AS_NODE=1' 'exec "$APP/MacOS/Review" "$APP/Resources/app/review-runtime/dist/cli.js" "$@"' | sudo sh -c 'cat > /usr/local/bin/review && chmod 755 /usr/local/bin/review'
+pnpm install:app
 ```
 
-Three steps: build, install to `/Applications`, put `review` on your `PATH`.
-Then open **Review** from Applications, and run `review --help` in a terminal.
+That builds Review, installs it to `/Applications`, and puts the `review` CLI
+on your `PATH`. It asks for `sudo` at the last two steps. Then open **Review**
+from Applications, or run `review --help` in a terminal.
 
-The `review` shim runs the CLI inside the bundle using the app's own Electron
-binary as Node, so the CLI needs no system Node.js — only the build does.
-Re-running the command rewrites both, so neither goes stale.
+Re-run it to upgrade: it replaces the installed app and rewrites the CLI shim,
+so neither goes stale.
 
 The first build takes a while and **needs network access** — it installs npm
 dependencies, downloads Electron and Node headers, and fetches the curated
