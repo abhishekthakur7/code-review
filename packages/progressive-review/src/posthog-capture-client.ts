@@ -34,6 +34,8 @@ export const PROGRESSIVE_REVIEW_POSTHOG_KEY_ENV =
 export const PROGRESSIVE_REVIEW_POSTHOG_HOST_ENV =
   "PROGRESSIVE_REVIEW_POSTHOG_HOST";
 
+// Local-only build marker: flip to `false` to restore PostHog delivery.
+export const LOCAL_ONLY_TELEMETRY_TRANSPORT_DISABLED = true;
 const DEFAULT_POSTHOG_HOST = "https://us.i.posthog.com";
 const DEFAULT_CAPTURE_TIMEOUT_MS = 1_000;
 const QUEUE_LIMIT = 1_000;
@@ -111,6 +113,8 @@ export class PostHogCaptureClient {
   }
 
   get enabled(): boolean {
+    // Local-only build: the transport is disabled, so nothing is ever queued.
+    if (LOCAL_ONLY_TELEMETRY_TRANSPORT_DISABLED) return false;
     return Boolean(this.apiKey && this.fetchImpl);
   }
 
@@ -333,6 +337,11 @@ export class PostHogCaptureClient {
     events: readonly QueuedPostHogEvent[],
     timeoutMs = this.timeoutMs,
   ): Promise<SendResult> {
+    // Local-only build: this is the single place event bytes would leave the
+    // process. Reporting "success" without sending lets the caller drain and
+    // delete any events still queued on disk from an earlier build, so a stale
+    // queue is purged locally rather than retried forever.
+    if (LOCAL_ONLY_TELEMETRY_TRANSPORT_DISABLED) return "success";
     if (!this.apiKey || !this.fetchImpl || events.length === 0) {
       return "success";
     }

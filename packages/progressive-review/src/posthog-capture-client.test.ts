@@ -15,7 +15,10 @@ describe("PostHogCaptureClient", () => {
     }
   });
 
-  it("sends the PostHog batch payload shape", async () => {
+  // Local-only build: the transport is disabled at the source. These first
+  // three cases are the guard for that -- they fail loudly if
+  // LOCAL_ONLY_TELEMETRY_TRANSPORT_DISABLED is ever flipped back to false.
+  it("never sends, even with an explicit key and fetch", async () => {
     const fetchMock = vi.fn<typeof fetch>(
       async () => new Response(null, { status: 200 }),
     );
@@ -25,31 +28,18 @@ describe("PostHogCaptureClient", () => {
       now: () => Date.parse("2026-08-05T12:00:00.000Z"),
     });
 
+    expect(client.enabled).toBe(false);
     await client.capture({
       event: "review_command_succeeded",
       distinctId: "install-1",
       properties: { command_path: "info", exit_code: 0, ignored: undefined },
     });
+    await client.flush();
 
-    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
-    expect(url).toBe("https://us.i.posthog.com/batch/");
-    expect(JSON.parse(String(init.body))).toEqual({
-      api_key: "test-key",
-      batch: [
-        {
-          event: "review_command_succeeded",
-          properties: {
-            command_path: "info",
-            exit_code: 0,
-            distinct_id: "install-1",
-          },
-          timestamp: "2026-08-05T12:00:00.000Z",
-        },
-      ],
-    });
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it("uses env overrides for the key and host", async () => {
+  it("ignores env overrides for the key and host", async () => {
     const root = await mkdtemp(path.join(os.tmpdir(), "review-queue-"));
     roots.push(root);
     const fetchMock = vi.fn<typeof fetch>(
@@ -67,9 +57,12 @@ describe("PostHogCaptureClient", () => {
     await client.capture({ event: "event", distinctId: "install-1" });
     await client.flush();
 
-    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
-    expect(url).toBe("https://posthog.example.com/batch/");
-    expect(JSON.parse(String(init.body)).api_key).toBe("env-key");
+    // Env-supplied key and host no longer produce delivery either.
+    expect(client.enabled).toBe(false);
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(
+      (await readdir(root)).filter((file) => file.endsWith(".json")),
+    ).toEqual([]);
   });
 
   it("disables capture when no key is embedded or set in the env", async () => {
@@ -89,7 +82,7 @@ describe("PostHogCaptureClient", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it("keeps queued events after a retryable failure", async () => {
+  it("queues nothing, so there is no retry backlog", async () => {
     const root = await mkdtemp(path.join(os.tmpdir(), "review-queue-"));
     roots.push(root);
     let now = Date.parse("2026-08-05T12:00:00.000Z");
@@ -105,18 +98,16 @@ describe("PostHogCaptureClient", () => {
       idFactory: () => "event-1",
     });
 
+    // Nothing reaches the on-disk queue, so there is no retry state to keep.
     await client.capture({ event: "event", distinctId: "install-1" });
     await client.flush();
-    expect((await readdir(root)).some((file) => file.endsWith(".json"))).toBe(
-      true,
-    );
-
-    now += 2_000;
-    await client.flush();
-    expect(fetchMock).toHaveBeenCalledTimes(2);
     expect(
       (await readdir(root)).filter((file) => file.endsWith(".json")),
     ).toEqual([]);
+
+    now += 2_000;
+    await client.flush();
+    expect(fetchMock).not.toHaveBeenCalled();
 
     await client.capture({ event: "event", distinctId: "install-1" });
     await client.discard();

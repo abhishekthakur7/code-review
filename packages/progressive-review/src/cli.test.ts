@@ -330,46 +330,17 @@ describe("Review CLI", () => {
       });
       await handlerEntered;
 
-      const queued = await Promise.all(
-        (await readdir(queueDir))
-          .filter((file) => file.endsWith(".json"))
-          .map(async (file) =>
-            JSON.parse(await readFile(path.join(queueDir, file), "utf8")),
-          ),
+      // Local-only build: the disabled transport never writes to the on-disk
+      // queue, so the command runs to completion with nothing persisted.
+      const queued = (await readdir(queueDir).catch(() => [])).filter((file) =>
+        file.endsWith(".json"),
       );
-      expect(queued).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({
-            event: "review_command_started",
-            properties: expect.objectContaining({
-              command_path: "info",
-              command_run_id: "8b733d48-1172-46a7-9df0-3cc71930c25a",
-            }),
-          }),
-        ]),
-      );
+      expect(queued).toEqual([]);
 
       release({ event: "info", reviews: [] });
       await expect(running).resolves.toBe(0);
-      const sent = fetchMock.mock.calls.flatMap(
-        ([, init]) =>
-          JSON.parse(String(init?.body)).batch as Array<{
-            event: string;
-            properties: Record<string, unknown>;
-          }>,
-      );
-      const lifecycle = sent.filter((event) =>
-        ["review_command_started", "review_command_succeeded"].includes(
-          event.event,
-        ),
-      );
-      expect(lifecycle).toHaveLength(2);
-      expect(lifecycle.map((event) => event.properties.command_run_id)).toEqual(
-        [
-          "8b733d48-1172-46a7-9df0-3cc71930c25a",
-          "8b733d48-1172-46a7-9df0-3cc71930c25a",
-        ],
-      );
+      // ...and nothing is delivered either.
+      expect(fetchMock).not.toHaveBeenCalled();
     } finally {
       await rm(rootPath, { recursive: true, force: true });
     }

@@ -30,7 +30,13 @@ export type ReviewKeymap = typeof REVIEW_KEYMAPS[number];
 
 export const reviewConfigurationDefaults = {
 	[REVIEW_SOFTWARE_MAP_SETTING]: false,
-	[REVIEW_TELEMETRY_SETTING]: true,
+	// Local-only build: the fork's own PostHog channel is a separate pipeline
+	// from the `telemetry.*` keys below (those govern upstream VS Code
+	// telemetry). It shipped defaulting to true, so it is flipped here as well.
+	[REVIEW_TELEMETRY_SETTING]: false,
+	// No periodic contact with the update server.
+	'update.mode': 'none',
+	'update.showReleaseNotes': false,
 	'telemetry.telemetryLevel': 'off',
 	'telemetry.enableTelemetry': false,
 	'telemetry.enableCrashReporter': false,
