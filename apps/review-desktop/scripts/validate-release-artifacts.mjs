@@ -38,7 +38,6 @@ export function assertPackagedProduct(product, { commit }) {
   const expectations = {
     commit,
     quality: "stable",
-    updateUrl: UPDATE_URL,
     darwinBundleIdentifier: "dev.fast.review",
   };
   for (const [key, expected] of Object.entries(expectations)) {
@@ -47,6 +46,14 @@ export function assertPackagedProduct(product, { commit }) {
         `packaged product.json ${key} is ${JSON.stringify(product[key])}, expected ${JSON.stringify(expected)}`,
       );
     }
+  }
+  // Local-only build: a packaged app must ship no update feed, so the updater
+  // disables itself permanently instead of depending on the `update.mode`
+  // setting. A reintroduced updateUrl fails the release.
+  if (product.updateUrl !== undefined) {
+    throw new Error(
+      `packaged product.json updateUrl is ${JSON.stringify(product.updateUrl)}, expected it to be absent`,
+    );
   }
 }
 

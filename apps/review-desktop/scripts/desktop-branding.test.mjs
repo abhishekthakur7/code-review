@@ -38,7 +38,6 @@ test("uses slash-form branding in Review Desktop display surfaces", () => {
 
 test("keeps compatibility-sensitive Desktop identifiers unchanged", () => {
   assert.equal(product.darwinBundleIdentifier, "dev.fast.review");
-  assert.equal(product.updateUrl, "https://update.dev.fast");
   assert.equal(product.urlProtocol, "dev-fast-review");
   assert.equal(product.dataFolderName, ".dev-fast-review");
   assert.equal(product.sharedDataFolderName, ".dev-fast-review-shared");

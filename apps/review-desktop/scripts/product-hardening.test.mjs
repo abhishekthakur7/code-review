@@ -38,13 +38,15 @@ test("keeps Review disconnected from Microsoft update and extension services", (
   assert.equal(product.enableTelemetry, false);
   assert.equal(product.extensionsGallery, null);
   assert.deepEqual(product.builtInExtensions, []);
-  // Review must never fall back to Microsoft's update service; the sanctioned
-  // feed below is the only one it may contact.
+  // Review must never contact any update service, Microsoft's or otherwise.
   assert.notEqual(product.updateUrl, "https://update.code.visualstudio.com");
 });
 
-test("updates only from the sanctioned dev.fast feed", () => {
-  assert.equal(product.updateUrl, "https://update.dev.fast");
+test("ships no update feed at all", () => {
+  // Local-only build: with no updateUrl, AbstractUpdateService disables itself
+  // permanently (DisablementReason.MissingConfiguration) rather than relying on
+  // the `update.mode` setting, which a user or a settings merge could flip.
+  assert.equal(product.updateUrl, undefined);
   assert.equal(product.quality, "stable");
 });
 
