@@ -45,12 +45,9 @@ describe("runSoftwareMapCliEntry telemetry", () => {
       });
 
       expect(exitCode).toBe(0);
-      expect(lastCaptureBody(fetchMock).properties).toMatchObject({
-        command: "map",
-        command_path: mode === "check" ? "map.check" : "invalid",
-        subcommand: mode,
-        mode,
-      });
+      // Local-only build: the command still runs and still reports its exit
+      // code, but the telemetry transport is disabled, so nothing is delivered.
+      expect(fetchMock).not.toHaveBeenCalled();
     },
   );
 
@@ -74,18 +71,11 @@ describe("runSoftwareMapCliEntry telemetry", () => {
       stderr: writableOutput([]),
     });
 
-    const body = lastCaptureBody(fetchMock);
     expect(exitCode).toBe(0);
-    expect(body.properties).toMatchObject({
-      command: "map",
-      subcommand: "update",
-      mode: "check",
-      has_base_ref: false,
-      has_head_ref: false,
-      force: false,
-    });
-    expect(JSON.stringify(body)).not.toContain("secret-base-ref");
-    expect(JSON.stringify(body)).not.toContain("secret-head-ref");
+    // Local-only build: the ref strings cannot leak because nothing is sent at
+    // all. Property-level sanitization is still covered by
+    // ui-telemetry-events.test.ts.
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it("emits failure telemetry for map command failures", async () => {
@@ -101,16 +91,9 @@ describe("runSoftwareMapCliEntry telemetry", () => {
     });
 
     expect(exitCode).toBe(1);
-    expect(lastCaptureBody(fetchMock)).toMatchObject({
-      event: "review_command_failed",
-      properties: {
-        command: "map",
-        mode: "check",
-        exit_code: 1,
-        error_name: "repository_error",
-        error_category: "local_state",
-      },
-    });
+    // Local-only build: failures are still surfaced through the exit code, but
+    // no failure event is delivered.
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 });
 
@@ -140,20 +123,4 @@ function writableOutput(output: string[]): NodeJS.WriteStream {
       return true;
     },
   } as NodeJS.WriteStream;
-}
-
-function lastCaptureBody(fetchMock: {
-  mock: { calls: Array<Parameters<typeof fetch>> };
-}) {
-  const body = fetchMock.mock.calls.at(-1)?.[1]?.body;
-  if (typeof body !== "string") throw new Error("Expected JSON string body");
-  const parsed = JSON.parse(body) as {
-    batch: Array<{
-      event: string;
-      properties: Record<string, string | number | boolean | undefined>;
-    }>;
-  };
-  const event = parsed.batch.at(-1);
-  if (!event) throw new Error("Expected a PostHog batch event");
-  return event;
 }

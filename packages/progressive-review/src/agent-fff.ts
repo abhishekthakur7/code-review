@@ -10,7 +10,6 @@ import type {
 } from "@dev.fast/review-protocol";
 
 export const FFF_SERVER_NAME = "fff";
-export const FFF_INSTALL_URL = "https://dmtrkovalenko.dev/install-fff-mcp.sh";
 export const FFF_TARGETS: ReviewFffInstallTarget[] = ["claude", "codex", "pi"];
 export const PI_FFF_PACKAGE = "npm:@ff-labs/pi-fff";
 
@@ -53,19 +52,17 @@ export async function installFffForTargets(input: {
 
   const needsMcpBinary = missingTargets.some((target) => target !== "pi");
   if (needsMcpBinary && !(await isFile(binaryPath))) {
-    input.write("Installing FFF MCP…\n");
-    const installer = await runCommand(
-      "/bin/bash",
-      ["-c", `set -o pipefail; curl -fL ${FFF_INSTALL_URL} | bash`],
-      input.homeDir,
-      input.env,
+    // Local-only build: upstream piped a remote shell script into bash here,
+    // executing unsigned third-party code from a domain outside this project's
+    // control. Registering an already-installed binary is still supported;
+    // fetching one over the network is not.
+    input.write(
+      `FFF MCP is not installed at ${binaryPath}.\n` +
+        "Automatic download is disabled in this build. Install fff-mcp yourself, then re-run.\n",
     );
-    input.write(installer.output);
-    if (!installer.ok || !(await isFile(binaryPath))) {
-      input.write(`FFF MCP was not installed at ${binaryPath}.\n`);
-      return { ok: false, created: [] };
-    }
-  } else if (needsMcpBinary) {
+    return { ok: false, created: [] };
+  }
+  if (needsMcpBinary) {
     input.write(`[ok] FFF MCP binary found at ${binaryPath}\n`);
   }
 

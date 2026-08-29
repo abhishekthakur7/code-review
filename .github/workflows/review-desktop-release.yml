@@ -195,10 +195,8 @@ jobs:
       # the pinned darwin-arm64 VSIX payloads. The macOS job packages this
       # archive; it must not silently rebuild or omit anything transferred here.
       - name: Compile Darwin payload on Linux
-        env:
-          # Embeds the PostHog project key into the review runtime build so
-          # released apps ship telemetry enabled. Source builds embed nothing.
-          REVIEW_POSTHOG_KEY: ${{ vars.REVIEW_POSTHOG_KEY }}
+        # Local-only build: REVIEW_POSTHOG_KEY is no longer passed. Releases
+        # ship with no embedded telemetry key, matching source builds.
         run: bash apps/review-desktop/scripts/compile-darwin-payload.sh
 
       - name: Upload darwin payload

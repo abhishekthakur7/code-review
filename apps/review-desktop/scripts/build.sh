@@ -115,9 +115,8 @@ else
   node "$PROTOCOL_BUNDLER" "$EVENT_STREAM_OUTPUT" "$EVENT_STREAM_OUTPUT"
 fi
 if [[ "$DEV_FAST_ACTIVE" != "1" ]]; then
-  if [[ -n "${REVIEW_POSTHOG_KEY:-}" ]]; then
-    node "$MONOREPO_ROOT/packages/progressive-review/scripts/embed-posthog-key.mjs"
-  fi
+  # Local-only build: the PostHog key-embedding step is removed. Builds ship
+  # with the undefined placeholder in src/embedded-posthog-key.ts.
   pnpm --dir "$MONOREPO_ROOT" --filter @dev.fast/review app:desktop:build
   pnpm --dir "$MONOREPO_ROOT" --filter @dev.fast/review build
   pnpm --dir "$MONOREPO_ROOT" --filter @dev.fast/review build:tutorial-assets

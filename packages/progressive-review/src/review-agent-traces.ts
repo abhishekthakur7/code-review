@@ -1513,7 +1513,17 @@ export function traceEnvValue(name: string): string | undefined {
   return process.env[name] ?? traceEnvFile()[name];
 }
 
+// Local-only build marker: flip to `false` to restore remote trace storage.
+const LOCAL_ONLY_R2_DISABLED = true;
+
 export function traceR2Config(): TraceR2Config | null {
+  // Local-only build: remote trace storage is disabled. Returning null here
+  // short-circuits every R2 caller (r2PutFile, r2HeadObjectSize, r2PutIfGrown,
+  // and the sync flow) before it shells out to `aws s3`, so raw agent
+  // transcripts never leave this machine even if credentials are still on disk
+  // at ~/.config/dev-trace/env. The TRACE_R2_MODE=mock branches are checked
+  // ahead of this and write to a local directory, so tests are unaffected.
+  if (LOCAL_ONLY_R2_DISABLED) return null;
   const bucket = traceEnvValue("TRACE_R2_BUCKET");
   const endpoint = traceEnvValue("TRACE_R2_ENDPOINT");
   const accessKeyId =

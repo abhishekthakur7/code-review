@@ -207,8 +207,7 @@ Repository secrets: `APPLE_CERT_BASE64`, `APPLE_CERT_PASSWORD`,
 `APPLE_KEYCHAIN_PASSWORD`, `APPLE_API_KEY_P8`, `R2_ACCESS_KEY_ID`,
 `R2_SECRET_ACCESS_KEY`. Repository variables: `APPLE_SIGN_IDENTITY`,
 `APPLE_TEAM_ID`, `APPLE_API_KEY_ID`, `APPLE_API_ISSUER_ID`,
-`R2_ENDPOINT_URL`, `R2_RELEASE_BUCKET`, `REVIEW_POSTHOG_KEY` (telemetry key
-embedded into release builds; source builds embed none), and `SKIP_NOTARIZE`
+`R2_ENDPOINT_URL`, `R2_RELEASE_BUCKET`, and `SKIP_NOTARIZE`
 (normally unset; set to `1` only to dry-run the workflow without signing).
 
 Normal CI uses GitHub's standard Ubuntu runner. The manual release workflow

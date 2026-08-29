@@ -1,5 +1,12 @@
 # Telemetry
 
+> **This build is local-only.** The telemetry, bug-report, and remote
+> trace-storage transports described below have been disabled in this fork:
+> no analytics reach PostHog, bug reports are refused before any source is
+> collected, agent traces are never uploaded, and the updater is off by
+> default. The rest of this page documents the upstream design and is kept for
+> reference. Search the source for `LOCAL_ONLY_` to find the guards.
+
 Review collects a small amount of anonymous usage and reliability data. We use
 it to learn which parts of Review are useful and where the app is failing.
 

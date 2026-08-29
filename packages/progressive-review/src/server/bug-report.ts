@@ -19,6 +19,8 @@ import {
 } from "../review-worktree-target";
 import { readSoftwareMapSourceForRef } from "../software-map-artifact";
 
+// Local-only build marker: flip to `false` to restore remote bug reporting.
+const LOCAL_ONLY_BUG_REPORTS_DISABLED = true;
 const BUG_REPORT_URL = "https://bug.dev.fast/api/v1/reports";
 const MAX_MULTIPART_BYTES = 10 * 1024 * 1024;
 const MULTIPART_BOUNDARY = "dev-fast-review-bug-report-v1";
@@ -83,6 +85,16 @@ export async function submitReviewBugReport(input: {
   clientErrorNames: string[];
   fetchImpl?: typeof fetch;
 }) {
+  // Local-only build: bug reports are disabled. The upstream flow uploaded the
+  // review document and its imported modules, the software map, full unified
+  // diffs of changed files, and a screenshot to a remote endpoint -- and it did
+  // so regardless of the telemetry opt-out, which gated nothing on this path.
+  // Rejecting before any attachment is read means no source is even collected.
+  if (LOCAL_ONLY_BUG_REPORTS_DISABLED) {
+    throw new Error(
+      "Bug reporting is disabled in this build: it would upload review source, diffs, and a screenshot off this machine.",
+    );
+  }
   const cliVersion = readProgressiveReviewPackageVersion();
   const attachmentErrors: AttachmentError[] = [];
   const payload: BugReportPayload = {
